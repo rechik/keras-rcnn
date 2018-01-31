@@ -162,7 +162,9 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
             # Scale the ground truth boxes to the selected image scale.
             target_bounding_boxes[batch_index, :, :4] *= self.scale
 
-        return [target_bounding_boxes, target_images, target_masks, self.target_metadata, target_scores], None
+        return [target_bounding_boxes, target_images, target_scores, self.target_metadata], None
+
+        # return [target_bounding_boxes, target_images, target_masks, self.target_metadata, target_scores], None
 
 
 class ImageSegmentationGenerator:
