@@ -77,14 +77,14 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
     def next(self):
         with self.lock:
-            print("self.lock")
+            # print("self.lock")
             selection = next(self.index_generator)
 
-        print("self._get_batches_of_transformed_samples(selection)")
+        # print("self._get_batches_of_transformed_samples(selection)")
         return self._get_batches_of_transformed_samples(selection)
 
     def _get_batches_of_transformed_samples(self, selection):
-        print("_get_batches_of_transformed_samples 1")
+        # print("_get_batches_of_transformed_samples 1")
 
         # Labels has num_classes + 1 elements, since 0 is reserved for
         # background.
@@ -98,105 +98,115 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
         target_scores = numpy.zeros((self.batch_size, 0, num_classes + 1), dtype=numpy.uint8)
 
-        print("_get_batches_of_transformed_samples 2")
+        # print("_get_batches_of_transformed_samples 2")
 
         for batch_index, image_index in enumerate(selection):
             count = 0
 
-            print("_get_batches_of_transformed_samples 3")
+            # print("_get_batches_of_transformed_samples 3", batch_index, image_index)
 
-            while count == 0:
-                print("_get_batches_of_transformed_samples 3.1")
+            # while count == 0:
+            # print("_get_batches_of_transformed_samples 3.1", count)
 
-                # Image
-                target_image_pathname = self.dictionary[image_index]["image"]["pathname"]
+            # Image
+            target_image_pathname = self.dictionary[image_index]["image"]["pathname"]
 
-                target_image = skimage.io.imread(target_image_pathname)
+            target_image = skimage.io.imread(target_image_pathname)
+            # print("target_image 1", target_image.shape)
 
-                if target_image.ndim == 2:
-                    target_image = numpy.expand_dims(target_image, -1)
-
-                print("_get_batches_of_transformed_samples 3.2")
-
-                # crop
-                if self.ox is None:
-                    offset_x = numpy.random.randint(0, self.image_shape[1] - self.target_shape[1] + 1)
-                else:
-                    offset_x = self.ox
-
-                print("_get_batches_of_transformed_samples 3.3")
+            if target_image.ndim == 2:
+                target_image = numpy.expand_dims(target_image, -1)
+                # print("target_image 2", target_image.shape)
 
 
-                if self.oy is None:
-                    offset_y = numpy.random.randint(0, self.image_shape[0] - self.target_shape[0] + 1)
-                else:
-                    offset_y = self.oy
+            # print("_get_batches_of_transformed_samples 3.2")
 
-                target_image = target_image[offset_y:self.target_shape[0] + offset_y, offset_x:self.target_shape[1] + offset_x, :]
+            # crop
+            if self.ox is None:
+                offset_x = numpy.random.randint(0, self.image_shape[1] - self.target_shape[1] + 1)
+            else:
+                offset_x = self.ox
 
-                # Copy image to batch blob.
-                target_images[batch_index] = skimage.transform.rescale(target_image, scale=self.scale, mode="reflect")
-
-                print("_get_batches_of_transformed_samples 3.4")
+            # print("_get_batches_of_transformed_samples 3.3")
 
 
-                # Set ground truth boxes.
-                for object_index, b in enumerate(self.dictionary[image_index]["objects"]):
+            if self.oy is None:
+                offset_y = numpy.random.randint(0, self.image_shape[0] - self.target_shape[0] + 1)
+            else:
+                offset_y = self.oy
 
-                    print("_get_batches_of_transformed_samples 3.5")
+            # target_image = target_image[offset_y:self.target_shape[0] + offset_y, offset_x:self.target_shape[1] + offset_x, :]
+            # print("target_image 3", target_image.shape)
 
-                    if b["class"] not in self.classes:
-                        continue
+            # Copy image to batch blob.
+            # target_images[batch_index] = skimage.transform.rescale(target_image, scale=self.scale, mode="reflect")
 
-                    print("_get_batches_of_transformed_samples 3.6")
+            # print("_get_batches_of_transformed_samples 3.4")
 
-                    bounding_box = b["bounding_box"]
 
-                    minimum_c = bounding_box["minimum"]["c"] - offset_x
-                    minimum_r = bounding_box["minimum"]["r"] - offset_y
+            # Set ground truth boxes.
+            for object_index, b in enumerate(self.dictionary[image_index]["objects"]):
 
-                    maximum_c = bounding_box["maximum"]["c"] - offset_x
-                    maximum_r = bounding_box["maximum"]["r"] - offset_y
+                # print("_get_batches_of_transformed_samples 3.5", image_index, len(self.dictionary[image_index]["objects"]))
 
-                    print("_get_batches_of_transformed_samples 3.7")
+                if b["class"] not in self.classes:
+                    continue
 
-                    if maximum_c == target_image.shape[1]:
-                        maximum_c -= 1
+                # print("_get_batches_of_transformed_samples 3.6", object_index, b)
 
-                    if maximum_r == target_image.shape[0]:
-                        maximum_r -= 1
+                bounding_box = b["bounding_box"]
 
-                    print("_get_batches_of_transformed_samples 3.8")
+                minimum_c = bounding_box["minimum"]["c"] - offset_x
+                minimum_r = bounding_box["minimum"]["r"] - offset_y
 
-                    if minimum_c >= 0 and maximum_c < target_image.shape[1] and minimum_r >= 0 and maximum_r < target_image.shape[0]:
-                        count += 1
+                maximum_c = bounding_box["maximum"]["c"] - offset_x
+                maximum_r = bounding_box["maximum"]["r"] - offset_y
 
-                        target_bounding_box = [
-                            minimum_c,
-                            minimum_r,
-                            maximum_c,
-                            maximum_r
-                        ]
+                # print("_get_batches_of_transformed_samples 3.7")
 
-                        print("_get_batches_of_transformed_samples 3.9")
+                if maximum_c == target_image.shape[1]:
+                    maximum_c -= 1
 
-                        target_bounding_boxes = numpy.append(target_bounding_boxes, [[target_bounding_box]], axis=1)
+                if maximum_r == target_image.shape[0]:
+                    maximum_r -= 1
 
-                        target_score = [0] * (num_classes + 1)
+                # print("_get_batches_of_transformed_samples 3.8", minimum_c, maximum_c, target_image.shape[1], minimum_r, maximum_r, target_image.shape[0])
 
-                        target_score[self.classes[b["class"]]] = 1
+                if minimum_c >= 0 and maximum_c < target_image.shape[1] and minimum_r >= 0 and maximum_r < target_image.shape[0]:
+                    count += 1
 
-                        target_scores = numpy.append(target_scores, [[target_score]], axis=1)
+                    target_bounding_box = [
+                        minimum_c,
+                        minimum_r,
+                        maximum_c,
+                        maximum_r
+                    ]
 
-                print("_get_batches_of_transformed_samples 4")
+                    # print("_get_batches_of_transformed_samples 3.9")
 
-            print("_get_batches_of_transformed_samples 5")
+                    target_bounding_boxes = numpy.append(target_bounding_boxes, [[target_bounding_box]], axis=1)
+
+                    target_score = [0] * (num_classes + 1)
+
+                    target_score[self.classes[b["class"]]] = 1
+
+                    target_scores = numpy.append(target_scores, [[target_score]], axis=1)
+
+            # print("_get_batches_of_transformed_samples 4")
+
+            # if count == 0 :
+            #     import sys
+            #     sys.exit()
+
+
+
+            # print("_get_batches_of_transformed_samples 5")
 
 
             # Scale the ground truth boxes to the selected image scale.
             target_bounding_boxes[batch_index, :, :4] *= self.scale
 
-        print("_get_batches_of_transformed_samples 6")
+        # print("_get_batches_of_transformed_samples 6")
 
         return [target_bounding_boxes, target_images, target_scores, self.target_metadata], None
 
